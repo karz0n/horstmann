@@ -12,15 +12,17 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class App implements Consumer<String[]> {
+public class App implements Consumer<String[]>, AutoCloseable {
     private static App instance;
 
     private Properties properties;
     private Logger logger;
+    private Connection connection;
 
     private App(String name) throws Exception {
         logger = createLogger(name);
         properties = getProperties();
+        connection = getConnection(properties);
     }
 
     static App getInstance(String name) throws Exception {
@@ -39,13 +41,11 @@ public class App implements Consumer<String[]> {
                 throw new FileNotFoundException("Script file doesn't exists");
             }
 
-            Scanner in = fromFile
-                ? new Scanner(stream, "UTF-8")
-                : new Scanner(System.in);
-
             try (
-                Connection connection = getConnection(properties);
-                Statement statement = connection.createStatement();
+                Scanner in = fromFile
+                    ? new Scanner(stream, "UTF-8")
+                    : new Scanner(System.in);
+                Statement statement = connection.createStatement()
             ) {
                 while(true) {
                     if (!fromFile)
@@ -136,5 +136,12 @@ public class App implements Consumer<String[]> {
         }
 
         return builder.toString();
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (connection != null && !connection.isClosed()) {
+            connection.close();
+        }
     }
 }
