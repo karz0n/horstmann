@@ -1,0 +1,4 @@
+CREATE TABLE Authors (Author_Id CHAR(4), Name CHAR(25), Fname CHAR(25), CONSTRAINT Authors_PK PRIMARY KEY (Author_Id), CONSTRAINT Authors_UN UNIQUE (Author_Id));
+CREATE TABLE Publishers (Publisher_Id CHAR(6) NOT NULL, Name CHAR(30), URL CHAR(80), CONSTRAINT Publishers_PK PRIMARY KEY (Publisher_Id), CONSTRAINT Publishers_UN UNIQUE (Publisher_Id));
+CREATE TABLE Books (Title CHAR(60), ISBN CHAR(13), Publisher_Id CHAR(6), Price DECIMAL(10,2), CONSTRAINT Books_PK PRIMARY KEY (ISBN), CONSTRAINT Books_UN UNIQUE (ISBN), CONSTRAINT Books_Publishers_FK FOREIGN KEY (Publisher_Id) REFERENCES Publishers(Publisher_Id));
+CREATE TABLE BooksAuthors (ISBN CHAR(13), Author_Id CHAR(4), Seq_No INT, CONSTRAINT BooksAuthors_Authors_FK FOREIGN KEY (Author_Id) REFERENCES Authors(Author_Id), CONSTRAINT BooksAuthors_Books_FK FOREIGN KEY (ISBN) REFERENCES Books(ISBN));
