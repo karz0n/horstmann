@@ -19,12 +19,6 @@ public class App implements Consumer<String[]>, AutoCloseable {
     private Logger logger;
     private Connection connection;
 
-    private App(String name) throws Exception {
-        logger = createLogger(name);
-        properties = getProperties();
-        connection = getConnection(properties);
-    }
-
     static App getInstance(String name) throws Exception {
         if (App.instance == null) {
             App.instance = new App(name);
@@ -32,52 +26,10 @@ public class App implements Consumer<String[]>, AutoCloseable {
         return App.instance;
     }
 
-    @Override
-    public void accept(String[] args) {
-        boolean fromFile = (args.length != 0);
-        try {
-            InputStream stream = this.getClass().getResourceAsStream(args[0]);
-            if (stream == null) {
-                throw new FileNotFoundException("Script file doesn't exists");
-            }
-
-            try (
-                Scanner in = fromFile
-                    ? new Scanner(stream, "UTF-8")
-                    : new Scanner(System.in);
-                Statement statement = connection.createStatement()
-            ) {
-                while(true) {
-                    if (!fromFile)
-                        System.out.println("Enter command or EXIT to exit:");
-                    if (!in.hasNextLine())
-                        return;
-
-                    String command = in.nextLine().trim();
-                    if (command.equalsIgnoreCase("EXIT"))
-                        return;
-                    if (command.endsWith(";"))
-                        command = command.substring(0, command.length() - 1);
-
-                    boolean hasResult = statement.execute(command);
-                    if (hasResult) {
-                        try (ResultSet rs = statement.getResultSet()) {
-                            String value = printResultSet(rs);
-                            logger.log(Level.FINE, value);
-                        }
-                    } else
-                        logger.log(Level.FINE, statement.getUpdateCount() + " rows updated");
-                }
-            }
-            catch (SQLException e) {
-                for (Throwable t: e) {
-                    logger.log(Level.WARNING, "Execute command", t);
-                }
-            }
-
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Read file", e);
-        }
+    private App(String name) throws Exception {
+        logger = createLogger(name);
+        properties = getProperties();
+        connection = getConnection(properties);
     }
 
     private Properties getProperties() throws Exception {
@@ -136,6 +88,54 @@ public class App implements Consumer<String[]>, AutoCloseable {
         }
 
         return builder.toString();
+    }
+
+    @Override
+    public void accept(String[] args) {
+        boolean fromFile = (args.length != 0);
+        try {
+            InputStream stream = this.getClass().getResourceAsStream(args[0]);
+            if (stream == null) {
+                throw new FileNotFoundException("Script file doesn't exists");
+            }
+
+            try (
+                Scanner in = fromFile
+                    ? new Scanner(stream, "UTF-8")
+                    : new Scanner(System.in);
+                Statement statement = connection.createStatement()
+            ) {
+                while(true) {
+                    if (!fromFile)
+                        System.out.println("Enter command or EXIT to exit:");
+                    if (!in.hasNextLine())
+                        return;
+
+                    String command = in.nextLine().trim();
+                    if (command.equalsIgnoreCase("EXIT"))
+                        return;
+                    if (command.endsWith(";"))
+                        command = command.substring(0, command.length() - 1);
+
+                    boolean hasResult = statement.execute(command);
+                    if (hasResult) {
+                        try (ResultSet rs = statement.getResultSet()) {
+                            String value = printResultSet(rs);
+                            logger.log(Level.FINE, value);
+                        }
+                    } else
+                        logger.log(Level.FINE, statement.getUpdateCount() + " rows updated");
+                }
+            }
+            catch (SQLException e) {
+                for (Throwable t: e) {
+                    logger.log(Level.WARNING, "Execute command", t);
+                }
+            }
+
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Read file", e);
+        }
     }
 
     @Override
