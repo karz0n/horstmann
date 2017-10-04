@@ -21,6 +21,7 @@ class App implements Runnable, AutoCloseable {
     private Logger logger;
     private Connection connection;
 
+    @SuppressWarnings("SameParameterValue")
     static App getInstance(String name) throws Exception {
         if (App.instance == null) {
             App.instance = new App(name);
@@ -45,7 +46,7 @@ class App implements Runnable, AutoCloseable {
             Scanner in = new Scanner(fileStream, "UTF-8");
             Statement statement = connection.createStatement()
         ) {
-            builder.append(String.format("Execute file %s:\n", fileName));
+            builder.append(String.format("Execute file %s:%n", fileName));
             while (in.hasNextLine()) {
                 String command = in.nextLine().trim();
                 if (command.endsWith(";"))
@@ -58,7 +59,7 @@ class App implements Runnable, AutoCloseable {
                 } else {
                     builder.append(statement.getUpdateCount()).append(" rows updated");
                 }
-                builder.append("\n");
+                builder.append(System.lineSeparator());
             }
         }
         return builder.toString();
@@ -103,13 +104,13 @@ class App implements Runnable, AutoCloseable {
         int columnCount = metaData.getColumnCount();
 
         StringBuilder builder = new StringBuilder();
-        builder.append("===================================\n");
+        builder.append("===================================").append(System.lineSeparator());
         for (int i = 1; i <= columnCount; i++) {
             if (i > 1)
                 builder.append(", ");
             builder.append(metaData.getColumnLabel(i));
         }
-        builder.append("\n");
+        builder.append(System.lineSeparator());
 
         while (rs.next()) {
             for (int i = 1; i <= columnCount; i++) {
@@ -117,9 +118,9 @@ class App implements Runnable, AutoCloseable {
                     builder.append(", ");
                 builder.append(rs.getString(i));
             }
-            builder.append("\n");
+            builder.append(System.lineSeparator());
         }
-        builder.append("===================================\n");
+        builder.append("===================================").append(System.lineSeparator());
         
         return builder.toString();
     }
@@ -132,7 +133,7 @@ class App implements Runnable, AutoCloseable {
         for (String name: names) {
             statement.setString(1, name);
             ResultSet rs = statement.executeQuery();
-            builder.append("By name: ").append(name).append("\n");
+            builder.append("By name: ").append(name).append(System.lineSeparator());
             builder.append(printResultSet(rs));
         }
         return builder.toString();

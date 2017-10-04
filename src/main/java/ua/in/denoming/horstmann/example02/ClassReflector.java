@@ -41,7 +41,9 @@ class ClassReflector {
         if (superClass != null && superClass != Object.class) {
             stream.print(" extends " + superClass.getName());
         }
-        stream.print("\n{\n");
+        stream.println();
+        stream.print("{");
+        stream.println();
 
         printConstructors(stream, cls);
         stream.println();

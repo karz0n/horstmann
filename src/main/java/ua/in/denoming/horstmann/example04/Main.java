@@ -18,6 +18,7 @@ public class Main {
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static Logger createLogger(String name) throws Exception {
         return Main.createLogger(name, Level.WARNING, Level.FINE);
     }
@@ -27,8 +28,7 @@ public class Main {
         logger.setLevel(Level.FINE);
         logger.setUseParentHandlers(false);
 
-        Formatter formatter = getFormatter(
-            "======= BEGIN =======\n", "\n======= END =======");
+        Formatter formatter = getFormatter();
         Filter filter = getFilter();
 
         logger.addHandler(
@@ -62,21 +62,11 @@ public class Main {
         }
     }
 
-    private static Formatter getFormatter(String head, String footer) {
+    private static Formatter getFormatter() {
         return new Formatter() {
             @Override
             public String format(LogRecord record) {
                 return super.formatMessage(record);
-            }
-
-            @Override
-            public String getHead(Handler h) {
-                return head;
-            }
-
-            @Override
-            public String getTail(Handler h) {
-                return footer;
             }
         };
     }

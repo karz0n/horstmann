@@ -19,6 +19,7 @@ public class App implements Consumer<String[]>, AutoCloseable {
     private Logger logger;
     private Connection connection;
 
+    @SuppressWarnings("SameParameterValue")
     static App getInstance(String name) throws Exception {
         if (App.instance == null) {
             App.instance = new App(name);
@@ -76,7 +77,7 @@ public class App implements Consumer<String[]>, AutoCloseable {
                 builder.append(", ");
             builder.append(metaData.getColumnLabel(i));
         }
-        builder.append("\n");
+        builder.append(System.lineSeparator());
 
         while(rs.next()) {
             for (int i = 1; i < columnCount; i++) {
@@ -84,7 +85,7 @@ public class App implements Consumer<String[]>, AutoCloseable {
                     builder.append(", ");
                 builder.append(rs.getString(i));
             }
-            builder.append("\n");
+            builder.append(System.lineSeparator());
         }
 
         return builder.toString();
