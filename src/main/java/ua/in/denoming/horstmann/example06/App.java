@@ -3,6 +3,8 @@ package ua.in.denoming.horstmann.example06;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.sql.*;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
 import java.util.logging.ConsoleHandler;
@@ -121,22 +123,50 @@ class App implements Runnable, AutoCloseable {
             builder.append(System.lineSeparator());
         }
         builder.append("===================================").append(System.lineSeparator());
-        
+
         return builder.toString();
     }
 
+    /**
+     * Sample using prepare statement
+     */
     private String searchBooksByPublisherName(String... names) throws SQLException {
-
-        PreparedStatement statement = connection.prepareStatement(App.publisherQuery);
-
-        StringBuilder builder = new StringBuilder();
-        for (String name: names) {
-            statement.setString(1, name);
-            ResultSet rs = statement.executeQuery();
-            builder.append("By name: ").append(name).append(System.lineSeparator());
-            builder.append(printResultSet(rs));
+        try (
+            PreparedStatement statement = connection.prepareStatement(App.publisherQuery)
+        ) {
+            StringBuilder builder = new StringBuilder();
+            for (String name : names) {
+                statement.setString(1, name);
+                ResultSet rs = statement.executeQuery();
+                builder.append("By name: ").append(name).append(System.lineSeparator());
+                builder.append(printResultSet(rs));
+            }
+            return builder.toString();
         }
-        return builder.toString();
+    }
+
+    private void updateBooksPrice(double increase, String... names) throws SQLException {
+        if (!connection.getMetaData().supportsResultSetConcurrency(
+            ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
+            logger.log(Level.WARNING, "Database doest not support result set type");
+            return;
+        }
+        try (
+            Statement statement = connection.createStatement(
+                ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)
+        ) {
+            List<String> nameList = Arrays.asList(names);
+            ResultSet rs = statement.executeQuery("SELECT * FROM Books");
+            while (rs.next()) {
+                String title = rs.getString("Title").trim();
+                boolean isFound = nameList.contains(title);
+                if (isFound) {
+                    double price = rs.getDouble("Price");
+                    rs.updateDouble("Price", price + increase);
+                    rs.updateRow();
+                }
+            }
+        }
     }
 
     @Override
@@ -152,6 +182,8 @@ class App implements Runnable, AutoCloseable {
 
             output = searchBooksByPublisherName("MIT Press", "Oxford University Press", "Random House");
             logger.log(Level.FINE, output);
+
+            updateBooksPrice(15, "Design Patterns", "The C++ Programming Language");
 
             output = executeScript("cleanup.sql");
             logger.log(Level.FINE, output);
