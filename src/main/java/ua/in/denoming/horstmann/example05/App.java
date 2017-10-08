@@ -1,10 +1,13 @@
 package ua.in.denoming.horstmann.example05;
 
+import ua.in.denoming.horstmann.shared.Database;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.*;
-import java.util.Properties;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Scanner;
 import java.util.function.Consumer;
 import java.util.logging.ConsoleHandler;
@@ -15,32 +18,18 @@ import java.util.logging.Logger;
 public class App implements Consumer<String[]>, AutoCloseable {
     private static App instance;
 
-    private Properties properties;
+    private Database database;
     private Logger logger;
-    private Connection connection;
 
-    @SuppressWarnings("SameParameterValue")
-    static App getInstance(String name) throws Exception {
+    static App getInstance() throws Exception {
         if (App.instance == null) {
-            App.instance = new App(name);
+            App.instance = new App("ua.in.denoming.horstmann.example05");
         }
         return App.instance;
     }
 
     private App(String name) throws Exception {
         logger = createLogger(name);
-        properties = getProperties();
-        connection = getConnection(properties);
-    }
-
-    private Properties getProperties() throws Exception {
-        InputStream in = this.getClass().getResourceAsStream("database.properties");
-        if (in == null) {
-            throw new FileNotFoundException("Properties file not found");
-        }
-        Properties props = new Properties();
-        props.load(in);
-        return props;
     }
 
     private Logger createLogger(String name) {
@@ -55,44 +44,7 @@ public class App implements Consumer<String[]>, AutoCloseable {
         return logger;
     }
 
-    private Connection getConnection(Properties props) throws SQLException {
-        String drivers = props.getProperty("jdbc.drivers");
-        if (drivers != null) {
-            System.setProperty("jdbc.drivers", drivers);
-        }
-        return DriverManager.getConnection(
-            props.getProperty("jdbc.url"),
-            props.getProperty("jdbc.user"),
-            props.getProperty("jdbc.password")
-        );
-    }
-
-    private String printResultSet(ResultSet rs) throws SQLException {
-        ResultSetMetaData metaData = rs.getMetaData();
-        int columnCount = metaData.getColumnCount();
-
-        StringBuilder builder = new StringBuilder();
-        for (int i = 1; i < columnCount; i++) {
-            if (i > 1)
-                builder.append(", ");
-            builder.append(metaData.getColumnLabel(i));
-        }
-        builder.append(System.lineSeparator());
-
-        while(rs.next()) {
-            for (int i = 1; i < columnCount; i++) {
-                if (i > 1)
-                    builder.append(", ");
-                builder.append(rs.getString(i));
-            }
-            builder.append(System.lineSeparator());
-        }
-
-        return builder.toString();
-    }
-
-    @Override
-    public void accept(String[] args) {
+    private void doAccept(String[] args) {
         boolean fromFile = (args.length != 0);
         try {
             InputStream stream = this.getClass().getResourceAsStream(args[0]);
@@ -101,12 +53,12 @@ public class App implements Consumer<String[]>, AutoCloseable {
             }
 
             try (
+                Statement statement = database.getConnection().createStatement();
                 Scanner in = fromFile
                     ? new Scanner(stream, "UTF-8")
-                    : new Scanner(System.in);
-                Statement statement = connection.createStatement()
+                    : new Scanner(System.in)
             ) {
-                while(true) {
+                while (true) {
                     if (!fromFile)
                         System.out.println("Enter command or EXIT to exit:");
                     if (!in.hasNextLine())
@@ -121,15 +73,14 @@ public class App implements Consumer<String[]>, AutoCloseable {
                     boolean hasResult = statement.execute(command);
                     if (hasResult) {
                         try (ResultSet rs = statement.getResultSet()) {
-                            String value = printResultSet(rs);
+                            String value = Database.printResultSet(rs);
                             logger.log(Level.FINE, value);
                         }
                     } else
                         logger.log(Level.FINE, statement.getUpdateCount() + " rows updated");
                 }
-            }
-            catch (SQLException e) {
-                for (Throwable t: e) {
+            } catch (SQLException e) {
+                for (Throwable t : e) {
                     logger.log(Level.WARNING, "Execute command", t);
                 }
             }
@@ -140,9 +91,14 @@ public class App implements Consumer<String[]>, AutoCloseable {
     }
 
     @Override
+    public void accept(String... args) {
+        database = new Database();
+        doAccept(args);
+    }
+
+    @Override
     public void close() throws Exception {
-        if (connection != null && !connection.isClosed()) {
-            connection.close();
-        }
+        if (database != null)
+            database.close();
     }
 }

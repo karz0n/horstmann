@@ -1,4 +1,4 @@
-package ua.in.denoming.horstmann.example06;
+package ua.in.denoming.horstmann.example07;
 
 public class Main {
     public static void main(String[] args) {
