@@ -7,7 +7,6 @@ import javax.sql.rowset.RowSetProvider;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.sql.*;
 import java.util.Properties;
 import java.util.Scanner;
@@ -64,21 +63,47 @@ public class Database implements AutoCloseable {
         );
     }
 
-    private void executeScript(String fileName) throws IOException, SQLException {
+    private void executeResourceScriptFile(String fileName) throws IOException, SQLException {
         InputStream fileStream = getClass().getResourceAsStream(fileName);
         if (fileStream == null) {
             throw new FileNotFoundException("Script file not found");
         }
+
+        Connection connection = getConnection();
+        boolean isAutoCommit = connection.getAutoCommit();
+        boolean isBatchUpdatesSupport = connection.getMetaData().supportsBatchUpdates();
+        if (isBatchUpdatesSupport) {
+            connection.setAutoCommit(false);
+        }
+
         try (
-            Statement statement = getConnection().createStatement();
+            Statement statement = connection.createStatement();
             Scanner scanner = new Scanner(fileStream, "UTF-8")
         ) {
             while (scanner.hasNextLine()) {
                 String command = scanner.nextLine().trim();
                 if (command.endsWith(";"))
                     command = command.substring(0, command.length() - 1);
-                statement.execute(command);
+                if (isBatchUpdatesSupport) {
+                    statement.addBatch(command);
+                } else {
+                    statement.execute(command);
+                }
             }
+
+            if (isBatchUpdatesSupport) {
+                statement.executeBatch();
+                try {
+                    connection.commit();
+                } catch (SQLException e) {
+                    connection.rollback();
+                    throw e;
+                }
+            }
+        }
+
+        if (isBatchUpdatesSupport) {
+            connection.setAutoCommit(isAutoCommit);
         }
     }
 
@@ -106,15 +131,15 @@ public class Database implements AutoCloseable {
     }
 
     public void prepare() throws IOException, SQLException {
-        executeScript("prepare.sql");
+        executeResourceScriptFile("prepare.sql");
     }
 
     public void populate() throws IOException, SQLException {
-        executeScript("populate.sql");
+        executeResourceScriptFile("populate.sql");
     }
 
     public void cleanup() throws IOException, SQLException {
-        executeScript("cleanup.sql");
+        executeResourceScriptFile("cleanup.sql");
     }
 
     @Override
