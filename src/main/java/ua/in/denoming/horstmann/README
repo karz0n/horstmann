@@ -6,3 +6,4 @@ example05 Example with JDBC. Reading and applying SQL commands from file or cons
 example06 Example with JDBC. Using JDBC features (prepared statement and scrollable result set).
 example07 Example with JDBC. Using row set.
 example08 Example with JDBC. Using transaction.
+example09 Example with generic. Create wrapper for body of thread that throw checked exception.
