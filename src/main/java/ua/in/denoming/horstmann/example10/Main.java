@@ -22,12 +22,24 @@ public class Main {
             + ", second = " + result.getSecond().getName());
     }
 
+    /**
+     * Wildcard admits all classes that extend Employee
+     * type of T is Employee (we can only read)
+     */
     private static void printBuddies(Pair<? extends Employee> p) {
         Employee first = p.getFirst();
         Employee second = p.getSecond();
         System.out.println(first.getName() + " and " + second.getName() + " are buddies.");
     }
 
+    /**
+     * Wildcard admits all super classes up to Manager (inclusive)
+     * The smallest common type is Object (? can be: Object || Employee || Manager)
+     * So the type of T will be Object
+     * In pair we can store objects that has type Manager or all their subtype
+     * (because in this situation we will have safe cast of types)
+     * Wildcard with super restriction is for write operation
+     */
     private static void minmaxBonus(Manager[] a, Pair<? super Manager> r) {
         if (a.length == 0) return;
         Manager min = a[0];
