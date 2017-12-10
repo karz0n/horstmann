@@ -11,15 +11,15 @@ public class Main {
         cfo.setBonus(500000);
         Manager[] managers = {ceo, cfo};
 
-        Pair<Employee> result = new Pair<>();
-        minmaxBonus(managers, result);
+        Pair<Employee> r = new Pair<>();
+        minmaxBonus(managers, r);
         System.out.print("Min-max bonus: ");
-        System.out.println("first = " + result.getFirst().getName()
-            + ", second = " + result.getSecond().getName());
+        System.out.println("first = " + r.getFirst().getName()
+            + ", second = " + r.getSecond().getName());
         System.out.print("Max-min bonus: ");
-        maxminBonus(managers, result);
-        System.out.println("first = " + result.getFirst().getName()
-            + ", second = " + result.getSecond().getName());
+        maxminBonus(managers, r);
+        System.out.println("first = " + r.getFirst().getName()
+            + ", second = " + r.getSecond().getName());
     }
 
     /**
