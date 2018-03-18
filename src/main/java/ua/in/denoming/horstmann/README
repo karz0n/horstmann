@@ -8,3 +8,4 @@ example07 Example with JDBC. Using row set.
 example08 Example with JDBC. Using transaction.
 example09 Example with generic. Create wrapper for body of thread that throw checked exception.
 example10 Example with generic. Create methods with wildcard character.
+example11 Example with multi-threading. Create searcher that use multi-threading to find word in files.
